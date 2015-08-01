@@ -6,22 +6,29 @@ import Tkinter
 #PAGES = 5
 
 def screenRes() :
-	return { 'height' : Tkinter.Tk().winfo_screenheight(),
-	         'width' : Tkinter.Tk().winfo_screenwidth() }
-
+	#return { 'height' : Tkinter.Tk().winfo_screenheight(),
+			 #'width' : Tkinter.Tk().winfo_screenwidth() }
+    return {
+              'height' : '900',
+              'width'  : '1600'
+             }
 def save(url, filename) :
 	import urllib
 	from os import path
 	sv = path.join(pt.get(), filename + '.' + 'jpg')
-	urllib.urlretrieve(url, sv)
+	class myUrlOpener(urllib.FancyURLopener):
+		version = 'Mozilla/5.0'
+
+	myopener = myUrlOpener()
+	myopener.retrieve(url, sv)
 
 def crawl(height, width, page) :
 	import urllib2
 	from bs4 import BeautifulSoup
 	import re
 	url = 'http://alpha.wallhaven.cc/search?categories=111&purity=100&resolutions=%sx%s&sorting=random&order=desc&page=%s' % (width, height, page)
-	#print url
-	html = urllib2.urlopen(url)
+	req = urllib2.Request(url, headers={ 'User-Agent': 'Mozilla/5.0' })
+	html = urllib2.urlopen(req).read()
 	soup = BeautifulSoup(html, 'html')
 	ss = soup.findAll('a', {'class' : 'preview' })
 	for s in ss :

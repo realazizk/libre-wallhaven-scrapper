@@ -1,6 +1,4 @@
 # randomWall
-pull images from wallhaven.cc
-</br>TODO : </br>
-- multithreading </br>
-- GUI </br>
-- filter sexual content </br>
+YOUTUBE:
+
+https://www.youtube.com/watch?v=WvrOK0LJKc8

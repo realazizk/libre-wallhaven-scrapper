@@ -160,8 +160,13 @@ class Window(wx.Frame):
     def ChangeBack(self, event):
         # Only supports gnome (needs experiments for gnome2)
         import os
-        os.system("gsettings set org.gnome.desktop.background picture-uri file://%s" % self.selectedimage)
-        
+        if os.environ.has_key('DESKTOP_SESSION'):
+          k = os.environ['DESKTOP_SESSION']
+          if k == 'gnome':
+            os.system("gsettings set org.gnome.desktop.background picture-uri file://%s" % self.selectedimage)
+          elif k == 'mate':
+            os.system('gsettings set org.mate.background picture-filename %s' % self.selectedimage)
+
 if __name__ == '__main__':
     myApp = wx.App()
     Window(None, title="Libre Wallhaven Scrapper (LWS) Ver. 0.1",

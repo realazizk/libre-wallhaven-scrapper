@@ -98,11 +98,15 @@ class Window(wx.Frame):
         self.lv.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         
         self.pages = wx.SpinCtrl(self.panel, wx.ID_ANY, min=1)
-        
+        self.resolution = wx.TextCtrl(self.panel, wx.NewId(), 
+            value='x'.join(map(str, list(wx.DisplaySize()))))
+
         self.pathinput = wx.TextCtrl(self.panel, id=wx.ID_ANY, value=self.dire.path)
         self.download  = wx.Button(self.panel, id=wx.ID_ANY, label="Fire") 
         hbox.Add(wx.StaticText(self.panel, label='Save Path'), 0 ,5)
         hbox.Add(self.pathinput, 1, wx.ALL, 5)
+        hbox.Add(wx.StaticText(self.panel, label="Screen size"), 0, 5)
+        hbox.Add(self.resolution, 0, wx.ALL, 5)
         hbox.Add(wx.StaticText(self.panel, label="Page number"), 0, 5)
         hbox.Add(self.pages, 0 , wx.ALL, 5)
         hbox.Add(self.download, 0, wx.ALL, 5)
@@ -135,6 +139,13 @@ class Window(wx.Frame):
     
     def Fire(self, event):
         # Get the pages from the spinner.
+
+        # reinitialize with the new display size ?
+        disp = map(str, self.resolution.GetValue().split('x'))
+
+        if len(disp)!=2: disp = wx.DisplaySize()
+
+        self.mywh = Wallhaven(disp)
         pages = self.pages.GetValue()
         for i in xrange(1, pages+1):
             for el in self.mywh.crawl(i):

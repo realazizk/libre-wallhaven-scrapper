@@ -151,10 +151,13 @@ class Window(wx.Frame):
     def MouseRightClick(self, event):
         self.selectedimage = event.GetText()
         menu = wx.Menu()
-        item = wx.MenuItem(menu, wx.ID_ANY, 'Change background')
+        item = wx.MenuItem(menu, wx.NewId(), 'Change background')
         menu.AppendItem(item)
         menu.Bind(wx.EVT_MENU, self.ChangeBack, item)
-        self.PopupMenu(menu, event.GetPosition())
+        # This will fix it for a while ?
+        pos = event.GetPosition()
+        pos[1] += 60
+        self.PopupMenu(menu, pos)
         menu.Destroy()
 
     def ChangeBack(self, event):

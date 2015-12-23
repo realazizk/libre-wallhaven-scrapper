@@ -32,7 +32,7 @@ class Wallhaven(object):
             filename = re.search(r'\d+', s['href']).group(0)
 	    url = 'http://wallpapers.wallhaven.cc/wallpapers/full/wallhaven-%s.jpg' % filename
             yield (url, filename)
-     
+
     def loadpath(self):
         try:
             with open(join(self.home, '.lws'), 'r') as myfile:
@@ -48,7 +48,7 @@ class Directory(object):
 
     def __init__(self, path):
         self.path = path
-        
+
     def GetimageFiles(self):
         """
         Gets valid image files from self.path
@@ -60,7 +60,7 @@ class Directory(object):
             l.extend(glob(join(self.path, ImageFile)))
         # Make sure all the image files are valid
         return filter(self.isvalidFile, l)
-    
+
     def save(self, url, filename):
 	self.sv = join(self.path, filename + '.' + 'jpg')
         # check if the server returns OK (code 200) and the file does not exist then download the image
@@ -72,17 +72,17 @@ class Directory(object):
                     myfile.write(urllib2.urlopen(req).read())
         except urllib2.HTTPError:
             pass
-        
+
     def isvalidFile(self, path):
         return isfile(path) and imghdr.what(path) in ['gif', 'png', 'jpeg']
-            
+
 class Window(wx.Frame):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.mywh = Wallhaven(wx.DisplaySize())
         # Inherits a Directory class and sets the path as '/tmp' if no config file is loaded
-        self.dire = Directory(self.mywh.loadpath()) 
+        self.dire = Directory(self.mywh.loadpath())
 
         self.panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -96,13 +96,13 @@ class Window(wx.Frame):
             self.lv.Append([el])
 
         self.lv.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        
+
         self.pages = wx.SpinCtrl(self.panel, wx.ID_ANY, min=1)
-        self.resolution = wx.TextCtrl(self.panel, wx.NewId(), 
+        self.resolution = wx.TextCtrl(self.panel, wx.NewId(),
             value='x'.join(map(str, list(wx.DisplaySize()))))
 
         self.pathinput = wx.TextCtrl(self.panel, id=wx.ID_ANY, value=self.dire.path)
-        self.download  = wx.Button(self.panel, id=wx.ID_ANY, label="Fire") 
+        self.download  = wx.Button(self.panel, id=wx.ID_ANY, label="Fire")
         hbox.Add(wx.StaticText(self.panel, label='Save Path'), 0 ,5)
         hbox.Add(self.pathinput, 1, wx.ALL, 5)
         hbox.Add(wx.StaticText(self.panel, label="Screen size"), 0, 5)
@@ -110,7 +110,7 @@ class Window(wx.Frame):
         hbox.Add(wx.StaticText(self.panel, label="Page number"), 0, 5)
         hbox.Add(self.pages, 0 , wx.ALL, 5)
         hbox.Add(self.download, 0, wx.ALL, 5)
-        
+
         #self.png = wx.Image('/', type=wx.BITMAP_TYPE_ANY)
         self.png = wx.EmptyImage(300, 300, clear=True)
         #self.image = wx.StaticBitmap(self.panel, -1, self.png.Scale(300, 300).ConvertToBitmap())
@@ -120,7 +120,7 @@ class Window(wx.Frame):
         hbox2.Add(self.image, 1, wx.ALIGN_RIGHT | wx.ALL| wx.EXPAND, 5)
 
         self.wall = Wallhaven(wx.DisplaySize())
-        
+
         vbox.Add(hbox, 1, wx.ALL | wx.EXPAND, 5)
         vbox.Add(hbox2, 0, wx.ALL|wx.EXPAND|wx.TOP, 5)
         self.panel.SetSizer(vbox)
@@ -131,12 +131,12 @@ class Window(wx.Frame):
         self.lv.Bind(wx.EVT_LIST_ITEM_SELECTED, self.DrawImage)
         self.Show(True)
 
-    
+
     def OnClose(self, event):
         # On window close event save the path to the "config" file
         self.mywh.save_path(self.pathinput.Value)
         self.Destroy()
-    
+
     def Fire(self, event):
         # Get the pages from the spinner.
 
@@ -167,8 +167,7 @@ class Window(wx.Frame):
         menu.Bind(wx.EVT_MENU, self.ChangeBack, item)
         # This will fix it for a while ?
         pos = event.GetPosition()
-        pos[1] += 60
-        self.PopupMenu(menu, pos)
+        self.PopupMenu(menu)
         menu.Destroy()
 
     def ChangeBack(self, event):
@@ -180,6 +179,10 @@ class Window(wx.Frame):
             os.system("gsettings set org.gnome.desktop.background picture-uri file://%s" % self.selectedimage)
           elif k == 'mate':
             os.system('gsettings set org.mate.background picture-filename %s' % self.selectedimage)
+          # I use feh on my computer running i3wm so I think you should get it
+          # too
+          elif k == 'i3':
+            os.system('feh --bg-fill %s' % self.selectedimage)
 
 if __name__ == '__main__':
     myApp = wx.App()

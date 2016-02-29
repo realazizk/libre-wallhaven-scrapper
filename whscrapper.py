@@ -171,16 +171,19 @@ class Window(wx.Frame):
         menu.Destroy()
 
     def ChangeBack(self, event):
-        # Only supports gnome (needs experiments for gnome2)
         import os
         if os.environ.has_key('DESKTOP_SESSION'):
           k = os.environ['DESKTOP_SESSION']
+          # Works under my xfce 4.12
+          if k=='xfce':
+            os.system("xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorLVDS1/workspace0/last-image -s %s"\
+                      % self.selectedimage)
           if k == 'gnome':
             os.system("gsettings set org.gnome.desktop.background picture-uri file://%s" % self.selectedimage)
           elif k == 'mate':
             os.system('gsettings set org.mate.background picture-filename %s' % self.selectedimage)
           # I use feh on my computer running i3wm so I think you should get it
-          # too
+          # too,
           elif k == 'i3':
             os.system('feh --bg-fill %s' % self.selectedimage)
 

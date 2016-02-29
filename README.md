@@ -1,4 +1,6 @@
-# randomWall
-YOUTUBE:
+# Libre wallhaven scrapper
 
-https://www.youtube.com/watch?v=WvrOK0LJKc8
+Screenshots:
+under GNU/Linux:
+
+![gnu-linux](gnu_linux.png)

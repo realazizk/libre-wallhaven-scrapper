@@ -9,6 +9,8 @@ from glob import glob
 import urllib2, re
 from bs4 import BeautifulSoup
 import imghdr
+import threading
+
 
 # The default path
 PATH = '/home/mohamed/wallpapers/'
@@ -17,12 +19,13 @@ class Wallhaven(object):
     # Get home directory, this is cross platform
     home = expanduser('~')
 
-    def __init__(self, resolution):
-        self.width, self.height = resolution
+    def __init__(self, resolution, searchterm):
+        self.resolution = 'x'.join(resolution)
+        self.term = searchterm
 
     def crawl(self, page) :
         # refactor this code
-   	url = 'http://alpha.wallhaven.cc/search?categories=111&purity=100&resolutions=%sx%s&sorting=random&order=desc&page=%s' % (self.width, self.height, page)
+   	url = 'http://alpha.wallhaven.cc/search?categories=111&purity=100&q=%s&resolutions=%s&sorting=random&order=desc&page=%s' % (self.term, self.resolution, page)
 	req = urllib2.Request(url, headers={ 'User-Agent': 'Mozilla/5.0' })
 	html = urllib2.urlopen(req).read()
 	soup = BeautifulSoup(html, 'html')
@@ -76,11 +79,34 @@ class Directory(object):
     def isvalidFile(self, path):
         return isfile(path) and imghdr.what(path) in ['gif', 'png', 'jpeg']
 
+
+
+class DownloadThread(threading.Thread):
+    def __init__(self, parent):
+        threading.Thread.__init__(self)
+        self._parent = parent
+        self.stopped = False
+
+    def run(self):
+        disp = map(str, self._parent.resolution.GetValue().split('x'))
+
+        self.mywh = Wallhaven(disp, self._parent.searchterm.Value)
+        pages = self._parent.pages.GetValue()
+        for i in xrange(1, pages+1):
+            for el in self.mywh.crawl(i):
+                if self.stopped:
+                    return
+                self._parent.dire.save( *el)
+                self._parent.lv.Append([self._parent.dire.sv])
+
+    def stop(self):
+        self.stopped = True
+
 class Window(wx.Frame):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-        self.mywh = Wallhaven(wx.DisplaySize())
+        self.mywh = Wallhaven([], '')
         # Inherits a Directory class and sets the path as '/tmp' if no config file is loaded
         self.dire = Directory(self.mywh.loadpath())
 
@@ -102,9 +128,13 @@ class Window(wx.Frame):
             value='x'.join(map(str, list(wx.DisplaySize()))))
 
         self.pathinput = wx.TextCtrl(self.panel, id=wx.ID_ANY, value=self.dire.path)
+
+        self.searchterm = wx.TextCtrl(self.panel, id=wx.ID_ANY)
         self.download  = wx.Button(self.panel, id=wx.ID_ANY, label="Fire")
         hbox.Add(wx.StaticText(self.panel, label='Save Path'), 0 ,5)
         hbox.Add(self.pathinput, 1, wx.ALL, 5)
+        hbox.Add(wx.StaticText(self.panel, label='Search term'), 0 ,5)
+        hbox.Add(self.searchterm, 1, wx.ALL, 5)
         hbox.Add(wx.StaticText(self.panel, label="Screen size"), 0, 5)
         hbox.Add(self.resolution, 0, wx.ALL, 5)
         hbox.Add(wx.StaticText(self.panel, label="Page number"), 0, 5)
@@ -119,7 +149,7 @@ class Window(wx.Frame):
         hbox2.Add(self.lv, 2, wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, 5)
         hbox2.Add(self.image, 1, wx.ALIGN_RIGHT | wx.ALL| wx.EXPAND, 5)
 
-        self.wall = Wallhaven(wx.DisplaySize())
+        self.wall = Wallhaven([], '')
 
         vbox.Add(hbox, 1, wx.ALL | wx.EXPAND, 5)
         vbox.Add(hbox2, 0, wx.ALL|wx.EXPAND|wx.TOP, 5)
@@ -138,19 +168,14 @@ class Window(wx.Frame):
         self.Destroy()
 
     def Fire(self, event):
-        # Get the pages from the spinner.
-
-        # reinitialize with the new display size ?
-        disp = map(str, self.resolution.GetValue().split('x'))
-
-        if len(disp)!=2: disp = wx.DisplaySize()
-
-        self.mywh = Wallhaven(disp)
-        pages = self.pages.GetValue()
-        for i in xrange(1, pages+1):
-            for el in self.mywh.crawl(i):
-                self.dire.save( *el)
-                self.lv.Append([self.dire.sv])
+        try:
+            self.worker.stop()
+            self.worker = None
+            self.download.SetLabel('Fire')
+        except:
+            self.worker = DownloadThread(self)
+            self.worker.start()
+            self.download.SetLabel('Stop')
 
     def DrawImage(self, event):
         filepath = self.lv.GetItemText(self.lv.GetFirstSelected())
@@ -182,9 +207,7 @@ class Window(wx.Frame):
             os.system("gsettings set org.gnome.desktop.background picture-uri file://%s" % self.selectedimage)
           elif k == 'mate':
             os.system('gsettings set org.mate.background picture-filename %s' % self.selectedimage)
-          # I use feh on my computer running i3wm so I think you should get it
-          # too,
-          elif k == 'i3':
+        else:
             os.system('feh --bg-fill %s' % self.selectedimage)
 
 if __name__ == '__main__':
@@ -192,4 +215,3 @@ if __name__ == '__main__':
     Window(None, title="Libre Wallhaven Scrapper (LWS) Ver. 0.1",
            size=(400, 300), style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
     myApp.MainLoop()
-
